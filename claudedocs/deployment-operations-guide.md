@@ -1,4 +1,5 @@
 # Deployment & Operations Guide
+
 **Email Tracking System - Infrastructure Management**
 
 **Dernière mise à jour**: 5 septembre 2025 - backend-architect  
@@ -7,6 +8,7 @@
 ## 🎯 Vue d'Ensemble de l'Infrastructure
 
 ### Architecture Déployée
+
 ```text
 Production:     Supabase Cloud + Vercel + Microsoft Graph API
 Development:    Supabase Local + Next.js Dev Server
@@ -14,6 +16,7 @@ Testing:        Supabase Local + Jest/Vitest
 ```
 
 ### Services Configurés
+
 - ✅ **Supabase Database** avec toutes les tables et RLS
 - ✅ **Rate Limiting Service** pour Microsoft Graph API
 - ✅ **Authentication** avec profils utilisateur
@@ -23,6 +26,7 @@ Testing:        Supabase Local + Jest/Vitest
 ## 🚀 Guide de Déploiement
 
 ### 1. Pré-requis
+
 ```bash
 # Outils requis
 - Node.js 18+
@@ -35,6 +39,7 @@ Testing:        Supabase Local + Jest/Vitest
 ### 2. Setup Local Development
 
 #### A. Configuration Supabase
+
 ```bash
 # 1. Installer Supabase CLI
 npm install -g @supabase/cli
@@ -47,6 +52,7 @@ supabase status
 ```
 
 #### B. Variables d'Environnement
+
 ```bash
 # 1. Copier le template
 cp .env.example .env.local
@@ -58,6 +64,7 @@ cp .env.example .env.local
 ```
 
 #### C. Test de l'Infrastructure
+
 ```bash
 # Test complet de l'infrastructure
 node scripts/test-supabase.js
@@ -72,6 +79,7 @@ node scripts/test-supabase.js
 ### 3. Déploiement Production
 
 #### A. Setup Supabase Cloud
+
 ```bash
 # 1. Créer projet sur https://supabase.com/dashboard
 # 2. Obtenir les clés depuis Settings > API
@@ -84,6 +92,7 @@ supabase db inspect
 ```
 
 #### B. Configuration Microsoft Graph
+
 ```bash
 # 1. Azure Portal > App Registrations
 # 2. Créer nouvelle app registration
@@ -97,6 +106,7 @@ supabase db inspect
 ```
 
 #### C. Déploiement Vercel
+
 ```bash
 # 1. Setup Vercel
 vercel login
@@ -119,6 +129,7 @@ vercel deploy --prod
 ### Variables Critiques (Obligatoires)
 
 #### Supabase
+
 ```bash
 # URLs et clés Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -127,6 +138,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...  # ⚠️ SECRET - Rate limiting uniquement
 ```
 
 #### Microsoft Graph API ⚠️ NOUVELLES EXIGENCES
+
 ```bash
 # Azure App Registration
 MICROSOFT_CLIENT_ID=your-client-id
@@ -138,6 +150,7 @@ MICROSOFT_SCOPES=https://graph.microsoft.com/Mail.Read,https://graph.microsoft.c
 ```
 
 #### Sécurité
+
 ```bash
 # Chiffrement des tokens Microsoft
 ENCRYPTION_KEY=your-32-character-encryption-key  # ⚠️ SECRET
@@ -150,6 +163,7 @@ WEBHOOK_SECRET=your-webhook-secret  # ⚠️ SECRET
 ```
 
 ### ⚠️ NOUVEAU: Variables Rate Limiting
+
 ```bash
 # Limites Microsoft Graph API (septembre 2025)
 GRAPH_RATE_LIMIT_EMAIL_OPS=10000      # Opérations email/heure
@@ -159,6 +173,7 @@ GRAPH_RATE_LIMIT_WINDOW_MINUTES=60    # Fenêtre de temps
 ```
 
 ### Variables Optionnelles
+
 ```bash
 # Monitoring et analytics
 SENTRY_DSN=https://...
@@ -173,6 +188,7 @@ SMTP_PASS=your-sendgrid-key
 ## 📊 Monitoring et Observabilité
 
 ### Services de Monitoring
+
 ```text
 ✅ Supabase Dashboard: Métriques DB, Auth, API
 ✅ Vercel Analytics: Performance, Erreurs, Usage
@@ -181,6 +197,7 @@ SMTP_PASS=your-sendgrid-key
 ```
 
 ### Métriques Clés
+
 ```text
 📈 Database Performance:
    - Query response time
@@ -199,6 +216,7 @@ SMTP_PASS=your-sendgrid-key
 ```
 
 ### Tableaux de Bord
+
 ```bash
 # Accès aux tableaux de bord
 Supabase Studio:    https://supabase.com/dashboard/project/YOUR_PROJECT
@@ -211,6 +229,7 @@ Rate Limiting:      Built-in via /api/rate-limit/status
 ### Problèmes Courants
 
 #### 1. Échec de Connection Supabase
+
 ```bash
 # Diagnostic
 supabase status  # Vérifier que les services tournent
@@ -222,6 +241,7 @@ supabase status  # Vérifier que les services tournent
 ```
 
 #### 2. Erreurs Rate Limiting
+
 ```bash
 # Diagnostic
 node scripts/test-supabase.js
@@ -233,6 +253,7 @@ node scripts/test-supabase.js
 ```
 
 #### 3. Authentification Microsoft Échoue
+
 ```bash
 # Vérifications
 - MICROSOFT_CLIENT_ID correct
@@ -242,6 +263,7 @@ node scripts/test-supabase.js
 ```
 
 #### 4. Erreurs Migration
+
 ```bash
 # Reset complet (development seulement)
 supabase db reset
@@ -256,6 +278,7 @@ supabase db push           # Apply
 ### Checklist Sécurité Production
 
 #### Database Security
+
 ```text
 ✅ RLS activé sur toutes les tables
 ✅ Politiques RLS testées et validées
@@ -265,6 +288,7 @@ supabase db push           # Apply
 ```
 
 #### API Security  
+
 ```text
 ✅ Rate limiting activé et testé
 ✅ Input validation avec Zod schemas
@@ -274,6 +298,7 @@ supabase db push           # Apply
 ```
 
 #### Infrastructure Security
+
 ```text
 ✅ Variables sensibles dans Vercel Environment
 ✅ HTTPS forcé en production
@@ -285,6 +310,7 @@ supabase db push           # Apply
 ## 📋 Checklist Déploiement
 
 ### Pre-Deployment
+
 - [ ] Tests d'infrastructure passent (node scripts/test-supabase.js)
 - [ ] Migrations testées en local
 - [ ] Variables d'environnement configurées
@@ -292,6 +318,7 @@ supabase db push           # Apply
 - [ ] Microsoft Graph permissions accordées
 
 ### Deployment
+
 - [ ] Migrations appliquées en production
 - [ ] Variables d'environnement définies dans Vercel
 - [ ] Vercel deployment successful
@@ -299,6 +326,7 @@ supabase db push           # Apply
 - [ ] Rate limiting fonctionnel
 
 ### Post-Deployment
+
 - [ ] Tests de bout en bout
 - [ ] Monitoring dashboards accessibles
 - [ ] Alertes configurées
@@ -308,6 +336,7 @@ supabase db push           # Apply
 ## 📚 Ressources et Documentation
 
 ### Documentation Technique
+
 ```text
 📖 Supabase Docs:        https://supabase.com/docs
 📖 Microsoft Graph:      https://docs.microsoft.com/graph
@@ -316,6 +345,7 @@ supabase db push           # Apply
 ```
 
 ### Scripts Utiles
+
 ```bash
 # Infrastructure
 scripts/test-supabase.js           # Test complet infrastructure
@@ -328,6 +358,7 @@ pnpm lint                         # Validation code
 ```
 
 ### Support et Escalation
+
 ```text
 🚨 Issues Critiques:     
    1. Vérifier status pages (Supabase, Vercel, Microsoft)
