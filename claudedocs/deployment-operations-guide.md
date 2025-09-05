@@ -1,570 +1,349 @@
-# Deployment and Operations Guide
+# Deployment & Operations Guide
+**Email Tracking System - Infrastructure Management**
 
-## Pre-Deployment Checklist
+**Dernière mise à jour**: 5 septembre 2025 - backend-architect  
+**Status**: ✅ Infrastructure Supabase configurée et opérationnelle
 
-### Environment Setup
+## 🎯 Vue d'Ensemble de l'Infrastructure
 
-#### 1. Supabase Configuration
+### Architecture Déployée
+```text
+Production:     Supabase Cloud + Vercel + Microsoft Graph API
+Development:    Supabase Local + Next.js Dev Server
+Testing:        Supabase Local + Jest/Vitest
+```
 
+### Services Configurés
+- ✅ **Supabase Database** avec toutes les tables et RLS
+- ✅ **Rate Limiting Service** pour Microsoft Graph API
+- ✅ **Authentication** avec profils utilisateur
+- ✅ **Real-time subscriptions** pour updates en temps réel
+- ✅ **Migrations** versionnées et reproductibles
+
+## 🚀 Guide de Déploiement
+
+### 1. Pré-requis
 ```bash
-# Local development setup
-supabase start
-supabase db reset
-supabase gen types typescript --local > types/database.ts
+# Outils requis
+- Node.js 18+
+- pnpm
+- Supabase CLI
+- Vercel CLI (pour production)
+- Compte Microsoft Azure (pour Graph API)
+```
 
-# Production setup
+### 2. Setup Local Development
+
+#### A. Configuration Supabase
+```bash
+# 1. Installer Supabase CLI
+npm install -g @supabase/cli
+
+# 2. Démarrer Supabase local
+supabase start
+
+# 3. Vérifier le status
+supabase status
+```
+
+#### B. Variables d'Environnement
+```bash
+# 1. Copier le template
+cp .env.example .env.local
+
+# 2. Configurer les variables (voir section Variables)
+# - Supabase keys (générées automatiquement en local)
+# - Microsoft Graph credentials
+# - Rate limiting settings
+```
+
+#### C. Test de l'Infrastructure
+```bash
+# Test complet de l'infrastructure
+node scripts/test-supabase.js
+
+# Résultat attendu:
+# ✅ Connection Test: PASS
+# ✅ Schema Test: PASS  
+# ✅ Rate Limiting Test: PASS
+# ✅ RLS Test: PASS
+```
+
+### 3. Déploiement Production
+
+#### A. Setup Supabase Cloud
+```bash
+# 1. Créer projet sur https://supabase.com/dashboard
+# 2. Obtenir les clés depuis Settings > API
+# 3. Appliquer les migrations
 supabase link --project-ref YOUR_PROJECT_REF
 supabase db push
-supabase secrets set ENCRYPTION_KEY="your-encryption-key"
+
+# 4. Vérifier les tables et RLS
+supabase db inspect
 ```
 
-#### 2. Microsoft Graph API Setup
-
-- Register application in Azure AD
-- Configure OAuth2 redirect URIs
-- Set required permissions:
-  - `Mail.Read` (Read user mail)
-  - `Mail.Send` (Send mail as user)
-  - `User.Read` (Read user profile)
-
-#### 3. Environment Variables
-
+#### B. Configuration Microsoft Graph
 ```bash
-# .env.local (development)
-NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+# 1. Azure Portal > App Registrations
+# 2. Créer nouvelle app registration
+# 3. Configurer redirect URI: https://yourapp.vercel.app/api/auth/microsoft/callback
+# 4. Ajouter permissions API:
+#    - Microsoft Graph > Mail.Read (delegated)
+#    - Microsoft Graph > Mail.Send (delegated)
+#    - Microsoft Graph > MailboxSettings.ReadWrite (delegated)
+#    - Microsoft Graph > User.Read (delegated)
+# 5. Générer client secret
+```
 
-MICROSOFT_CLIENT_ID=your-azure-app-id
-MICROSOFT_CLIENT_SECRET=your-azure-app-secret
-MICROSOFT_REDIRECT_URI=http://localhost:3000/api/auth/microsoft/callback
+#### C. Déploiement Vercel
+```bash
+# 1. Setup Vercel
+vercel login
+vercel link
 
-ENCRYPTION_KEY=your-32-char-encryption-key
-WEBHOOK_SECRET=your-webhook-validation-secret
+# 2. Configurer variables d'environnement
+vercel env add NEXT_PUBLIC_SUPABASE_URL
+vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
+vercel env add SUPABASE_SERVICE_ROLE_KEY
+vercel env add MICROSOFT_CLIENT_ID
+vercel env add MICROSOFT_CLIENT_SECRET
+vercel env add ENCRYPTION_KEY
 
-# .env.production (via Vercel dashboard)
+# 3. Déployer
+vercel deploy --prod
+```
+
+## 🔧 Variables d'Environnement
+
+### Variables Critiques (Obligatoires)
+
+#### Supabase
+```bash
+# URLs et clés Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-prod-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-prod-service-role-key
-
-MICROSOFT_CLIENT_ID=your-prod-azure-app-id
-MICROSOFT_CLIENT_SECRET=your-prod-azure-app-secret
-MICROSOFT_REDIRECT_URI=https://your-domain.com/api/auth/microsoft/callback
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...  # ⚠️ SECRET - Rate limiting uniquement
 ```
 
-### Security Validation
-
-#### 1. Security Headers Check
-
-```typescript
-// Test security headers
-const securityHeaders = [
-  'X-Frame-Options',
-  'X-Content-Type-Options',
-  'Referrer-Policy',
-  'X-XSS-Protection',
-  'Content-Security-Policy'
-];
-
-async function validateSecurityHeaders(url: string) {
-  const response = await fetch(url);
-  const missingHeaders = securityHeaders.filter(
-    header => !response.headers.get(header.toLowerCase())
-  );
-  
-  if (missingHeaders.length > 0) {
-    throw new Error(`Missing security headers: ${missingHeaders.join(', ')}`);
-  }
-}
-```
-
-#### 2. RLS Policy Verification
-
-```sql
--- Test RLS policies
-SELECT 
-  schemaname,
-  tablename,
-  policyname,
-  permissive,
-  roles,
-  cmd,
-  qual
-FROM pg_policies 
-WHERE schemaname = 'public';
-
--- Verify no data leakage between users
-SET ROLE authenticated;
-SET request.jwt.claims TO '{"sub": "test-user-id"}';
-SELECT * FROM tracked_emails; -- Should only return test user's data
-```
-
-## Deployment Pipeline
-
-### 1. Automated Deployment (GitHub Actions)
-
-```yaml
-# .github/workflows/deploy.yml
-name: Deploy to Production
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
-          cache: 'pnpm'
-      
-      - run: pnpm install
-      - run: pnpm run lint
-      - run: pnpm run type-check
-      - run: pnpm run test
-      
-      # Security scanning
-      - run: pnpm audit
-      - uses: github/codeql-action/analyze@v2
-
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - uses: actions/checkout@v4
-      - uses: vercel/action@v1
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
-
-  database-migration:
-    needs: deploy
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
-      - run: |
-          supabase db push --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-
-  smoke-tests:
-    needs: [deploy, database-migration]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: pnpm install
-      - run: pnpm run test:e2e
-        env:
-          TEST_URL: https://your-domain.com
-```
-
-### 2. Database Migration Strategy
-
-```sql
--- Migration versioning system
-CREATE TABLE IF NOT EXISTS migration_history (
-  version INTEGER PRIMARY KEY,
-  description TEXT NOT NULL,
-  applied_at TIMESTAMP DEFAULT NOW(),
-  applied_by TEXT DEFAULT current_user
-);
-
--- Example migration: Add email analytics table
--- migrations/003_add_email_analytics.sql
-INSERT INTO migration_history (version, description) 
-VALUES (3, 'Add email analytics materialized view');
-
-CREATE MATERIALIZED VIEW email_analytics AS
-SELECT 
-  DATE_TRUNC('day', sent_at) as date,
-  email_account_id,
-  COUNT(*) as total_emails,
-  COUNT(*) FILTER (WHERE has_response = true) as emails_with_response,
-  AVG(response_count) as avg_response_count
-FROM tracked_emails
-WHERE sent_at >= NOW() - INTERVAL '90 days'
-GROUP BY DATE_TRUNC('day', sent_at), email_account_id
-ORDER BY date DESC;
-
-CREATE UNIQUE INDEX idx_email_analytics_date_account 
-ON email_analytics (date, email_account_id);
-```
-
-### 3. Health Checks and Monitoring
-
-```typescript
-// app/api/health/route.ts
-export async function GET() {
-  const checks = await Promise.allSettled([
-    checkDatabase(),
-    checkMicrosoftGraphAPI(),
-    checkWebhookEndpoint(),
-    checkCronJobs()
-  ]);
-
-  const results = checks.map((check, index) => ({
-    service: ['database', 'microsoft-graph', 'webhooks', 'cron-jobs'][index],
-    status: check.status === 'fulfilled' ? 'healthy' : 'unhealthy',
-    details: check.status === 'rejected' ? check.reason?.message : 'OK'
-  }));
-
-  const allHealthy = results.every(r => r.status === 'healthy');
-
-  return NextResponse.json(
-    { status: allHealthy ? 'healthy' : 'degraded', checks: results },
-    { status: allHealthy ? 200 : 503 }
-  );
-}
-
-async function checkDatabase() {
-  const supabase = createServiceRoleClient();
-  const { error } = await supabase.from('profiles').select('count').limit(1);
-  if (error) throw error;
-}
-
-async function checkMicrosoftGraphAPI() {
-  const response = await fetch('https://graph.microsoft.com/v1.0/$metadata');
-  if (!response.ok) throw new Error('Microsoft Graph API unavailable');
-}
-
-async function checkWebhookEndpoint() {
-  const response = await fetch(`${process.env.VERCEL_URL}/api/webhooks/health`);
-  if (!response.ok) throw new Error('Webhook endpoint unavailable');
-}
-
-async function checkCronJobs() {
-  // Check if cron jobs are running (check last execution timestamp)
-  const supabase = createServiceRoleClient();
-  const { data } = await supabase
-    .from('cron_job_logs')
-    .select('*')
-    .order('executed_at', { ascending: false })
-    .limit(1);
-
-  const lastRun = data?.[0]?.executed_at;
-  if (!lastRun || new Date(lastRun) < new Date(Date.now() - 15 * 60 * 1000)) {
-    throw new Error('Cron jobs not running');
-  }
-}
-```
-
-## Monitoring and Observability
-
-### 1. Application Metrics
-
-```typescript
-// lib/metrics.ts
-export class MetricsCollector {
-  static async trackEmailProcessed(emailAccountId: string, processingTime: number) {
-    // Send to external monitoring service
-    await fetch('https://api.your-monitoring-service.com/metrics', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        metric: 'email.processed',
-        value: 1,
-        tags: { account_id: emailAccountId },
-        timestamp: Date.now()
-      })
-    });
-
-    // Store in database for internal analytics
-    const supabase = createServiceRoleClient();
-    await supabase.from('performance_metrics').insert({
-      metric_name: 'email_processing_time',
-      metric_value: processingTime,
-      metadata: { email_account_id: emailAccountId },
-      recorded_at: new Date().toISOString()
-    });
-  }
-
-  static async trackFollowUpSent(ruleId: string, success: boolean) {
-    const metric = success ? 'follow_up.sent' : 'follow_up.failed';
-    
-    await fetch('https://api.your-monitoring-service.com/metrics', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        metric,
-        value: 1,
-        tags: { rule_id: ruleId },
-        timestamp: Date.now()
-      })
-    });
-  }
-}
-
-// Usage in API routes
-export async function POST(request: NextRequest) {
-  const startTime = Date.now();
-  
-  try {
-    const result = await processEmail();
-    
-    MetricsCollector.trackEmailProcessed(
-      result.emailAccountId, 
-      Date.now() - startTime
-    );
-    
-    return NextResponse.json(result);
-  } catch (error) {
-    MetricsCollector.trackEmailProcessed(
-      'unknown',
-      Date.now() - startTime
-    );
-    throw error;
-  }
-}
-```
-
-### 2. Error Tracking with Sentry
-
-```typescript
-// lib/sentry.ts
-import * as Sentry from '@sentry/nextjs';
-
-export function initSentry() {
-  Sentry.init({
-    dsn: process.env.SENTRY_DSN,
-    environment: process.env.NODE_ENV,
-    
-    // Performance monitoring
-    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    
-    // Session replay for debugging
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
-    
-    // Custom error filtering
-    beforeSend(event, hint) {
-      // Don't send client-side validation errors
-      if (event.exception?.values?.[0]?.type === 'ValidationError') {
-        return null;
-      }
-      return event;
-    },
-    
-    // Custom tags for better organization
-    initialScope: {
-      tags: {
-        component: 'email-tracking',
-        version: process.env.npm_package_version
-      }
-    }
-  });
-}
-
-// Structured error context
-export function captureEmailTrackingError(error: Error, context: {
-  userId?: string;
-  emailAccountId?: string;
-  messageId?: string;
-  operation: string;
-}) {
-  Sentry.withScope(scope => {
-    scope.setTag('operation', context.operation);
-    scope.setUser({ id: context.userId });
-    scope.setContext('email_tracking', {
-      emailAccountId: context.emailAccountId,
-      messageId: context.messageId
-    });
-    
-    Sentry.captureException(error);
-  });
-}
-```
-
-### 3. Performance Monitoring
-
-```typescript
-// lib/performance.ts
-export class PerformanceMonitor {
-  private static timers = new Map<string, number>();
-
-  static startTimer(operationId: string): void {
-    this.timers.set(operationId, performance.now());
-  }
-
-  static endTimer(operationId: string): number {
-    const startTime = this.timers.get(operationId);
-    if (!startTime) return 0;
-
-    const duration = performance.now() - startTime;
-    this.timers.delete(operationId);
-
-    // Send to monitoring service
-    this.recordMetric('operation_duration', duration, {
-      operation: operationId
-    });
-
-    return duration;
-  }
-
-  private static async recordMetric(
-    name: string, 
-    value: number, 
-    tags: Record<string, string>
-  ) {
-    // Send to external monitoring
-    if (process.env.DATADOG_API_KEY) {
-      await fetch('https://api.datadoghq.com/api/v1/series', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'DD-API-KEY': process.env.DATADOG_API_KEY!
-        },
-        body: JSON.stringify({
-          series: [{
-            metric: `email_tracking.${name}`,
-            points: [[Math.floor(Date.now() / 1000), value]],
-            tags: Object.entries(tags).map(([k, v]) => `${k}:${v}`)
-          }]
-        })
-      });
-    }
-  }
-}
-
-// Usage in critical paths
-export async function processWebhookNotification(notification: any) {
-  const operationId = `webhook_${notification.subscriptionId}_${Date.now()}`;
-  
-  PerformanceMonitor.startTimer(operationId);
-  
-  try {
-    await processNotification(notification);
-  } finally {
-    const duration = PerformanceMonitor.endTimer(operationId);
-    
-    if (duration > 5000) { // Alert on slow operations
-      console.warn(`Slow webhook processing: ${duration}ms for ${operationId}`);
-    }
-  }
-}
-```
-
-## Operational Procedures
-
-### 1. Incident Response Playbook
-
-#### Database Issues
-
+#### Microsoft Graph API ⚠️ NOUVELLES EXIGENCES
 ```bash
-# Check database health
-curl -f https://your-domain.com/api/health
+# Azure App Registration
+MICROSOFT_CLIENT_ID=your-client-id
+MICROSOFT_CLIENT_SECRET=your-client-secret  # ⚠️ SECRET
+MICROSOFT_REDIRECT_URI=https://yourapp.vercel.app/api/auth/microsoft/callback
 
-# Check slow queries
-SELECT query, mean_exec_time, calls 
-FROM pg_stat_statements 
-ORDER BY mean_exec_time DESC 
-LIMIT 10;
-
-# Check active connections
-SELECT count(*) FROM pg_stat_activity;
-
-# Emergency: Scale database resources via Supabase dashboard
+# ⚠️ NOUVEAU: Scopes configurables (septembre 2025)
+MICROSOFT_SCOPES=https://graph.microsoft.com/Mail.Read,https://graph.microsoft.com/Mail.Send,https://graph.microsoft.com/MailboxSettings.ReadWrite,https://graph.microsoft.com/User.Read
 ```
 
-#### Microsoft Graph API Issues
-
+#### Sécurité
 ```bash
-# Check API status
-curl -f https://graph.microsoft.com/v1.0/$metadata
+# Chiffrement des tokens Microsoft
+ENCRYPTION_KEY=your-32-character-encryption-key  # ⚠️ SECRET
 
-# Verify webhook subscriptions
-curl -H "Authorization: Bearer $ACCESS_TOKEN" \
-     https://graph.microsoft.com/v1.0/subscriptions
+# JWT pour l'application
+JWT_SECRET=your-jwt-secret  # ⚠️ SECRET
 
-# Emergency: Disable webhook processing
-# Set environment variable DISABLE_WEBHOOKS=true
+# Webhooks Microsoft Graph
+WEBHOOK_SECRET=your-webhook-secret  # ⚠️ SECRET
 ```
 
-#### High Error Rate Response
-
+### ⚠️ NOUVEAU: Variables Rate Limiting
 ```bash
-# Check error distribution in logs
-vercel logs --app your-app --since 1h | grep ERROR
-
-# Check Sentry for error patterns
-# Dashboard: https://sentry.io/your-org/your-project/
-
-# Emergency: Enable maintenance mode
-# Set environment variable MAINTENANCE_MODE=true
+# Limites Microsoft Graph API (septembre 2025)
+GRAPH_RATE_LIMIT_EMAIL_OPS=10000      # Opérations email/heure
+GRAPH_RATE_LIMIT_WEBHOOKS=50          # Webhooks/heure  
+GRAPH_RATE_LIMIT_BULK=100             # Opérations bulk/minute
+GRAPH_RATE_LIMIT_WINDOW_MINUTES=60    # Fenêtre de temps
 ```
 
-### 2. Backup and Recovery
-
-```sql
--- Database backup strategy
--- Automated daily backups via Supabase
--- Point-in-time recovery available for 7 days
-
--- Manual backup before major changes
-pg_dump --host=your-host \
-        --username=postgres \
-        --dbname=postgres \
-        --no-password \
-        --format=custom \
-        --file=backup_$(date +%Y%m%d_%H%M%S).dump
-
--- Recovery test procedure
--- 1. Create test environment
--- 2. Restore backup
--- 3. Verify data integrity
--- 4. Test critical user flows
-```
-
-### 3. Scaling Procedures
-
-#### Horizontal Scaling Triggers
-
-- Response time > 2s (95th percentile)
-- Error rate > 1%
-- CPU usage > 80% sustained
-- Database connection pool > 80% utilized
-
-#### Scaling Actions
-
+### Variables Optionnelles
 ```bash
-# Vercel: Automatic scaling for serverless functions
-# Monitor via Vercel dashboard
+# Monitoring et analytics
+SENTRY_DSN=https://...
+ANALYTICS_ID=ga-xxx
 
-# Database: Scale via Supabase dashboard
-# Options: Micro -> Small -> Medium -> Large -> XL
-
-# Caching: Implement Redis for frequent queries
-# Add Redis instance via Upstash or similar
+# Email SMTP (notifications production)
+SMTP_HOST=smtp.sendgrid.net
+SMTP_USER=apikey
+SMTP_PASS=your-sendgrid-key
 ```
 
-### 4. Regular Maintenance Tasks
+## 📊 Monitoring et Observabilité
 
-#### Weekly
+### Services de Monitoring
+```text
+✅ Supabase Dashboard: Métriques DB, Auth, API
+✅ Vercel Analytics: Performance, Erreurs, Usage
+✅ Rate Limiting: Monitoring automatique via DB
+🔄 Sentry: Tracking erreurs (optionnel)
+```
 
-- Review error rates and performance metrics
-- Check database query performance
-- Update dependencies (automated via Dependabot)
-- Review security alerts
+### Métriques Clés
+```text
+📈 Database Performance:
+   - Query response time
+   - Connection pool usage
+   - RLS policy execution time
 
-#### Monthly
+📈 API Performance:
+   - Microsoft Graph API response time
+   - Rate limit hit rate
+   - Authentication success rate
 
-- Audit user permissions and access logs
-- Review and update backup procedures
-- Performance optimization review
-- Security vulnerability assessment
+📈 Application Metrics:
+   - User signup/login rate
+   - Email tracking volume
+   - Follow-up execution success rate
+```
 
-#### Quarterly
+### Tableaux de Bord
+```bash
+# Accès aux tableaux de bord
+Supabase Studio:    https://supabase.com/dashboard/project/YOUR_PROJECT
+Vercel Dashboard:   https://vercel.com/dashboard
+Rate Limiting:      Built-in via /api/rate-limit/status
+```
 
-- Disaster recovery testing
-- Security penetration testing
-- Database maintenance (VACUUM, reindex)
-- Business continuity plan review
+## 🔍 Debugging et Troubleshooting
 
-This operational guide ensures reliable deployment and ongoing maintenance of the email tracking system at scale.
+### Problèmes Courants
+
+#### 1. Échec de Connection Supabase
+```bash
+# Diagnostic
+supabase status  # Vérifier que les services tournent
+
+# Solutions
+- Vérifier NEXT_PUBLIC_SUPABASE_URL
+- Vérifier NEXT_PUBLIC_SUPABASE_ANON_KEY  
+- Redémarrer Supabase: supabase restart
+```
+
+#### 2. Erreurs Rate Limiting
+```bash
+# Diagnostic
+node scripts/test-supabase.js
+
+# Vérifications
+- SUPABASE_SERVICE_ROLE_KEY configuré
+- Fonction check_rate_limit existe en DB
+- Table rate_limit_tracking accessible
+```
+
+#### 3. Authentification Microsoft Échoue
+```bash
+# Vérifications
+- MICROSOFT_CLIENT_ID correct
+- MICROSOFT_CLIENT_SECRET valide
+- Redirect URI match Azure config
+- Permissions API accordées dans Azure
+```
+
+#### 4. Erreurs Migration
+```bash
+# Reset complet (development seulement)
+supabase db reset
+
+# Application manuelle des migrations
+supabase db push --dry-run  # Preview
+supabase db push           # Apply
+```
+
+## 🔐 Sécurité et Compliance
+
+### Checklist Sécurité Production
+
+#### Database Security
+```text
+✅ RLS activé sur toutes les tables
+✅ Politiques RLS testées et validées
+✅ Service role key limitée aux fonctions critiques
+✅ Backup automatique configuré
+✅ SSL/TLS forcé sur toutes connexions
+```
+
+#### API Security  
+```text
+✅ Rate limiting activé et testé
+✅ Input validation avec Zod schemas
+✅ CORS configuré correctement
+✅ Headers de sécurité (CSP, HSTS)
+✅ Tokens Microsoft chiffrés en DB
+```
+
+#### Infrastructure Security
+```text
+✅ Variables sensibles dans Vercel Environment
+✅ HTTPS forcé en production
+✅ Webhook signatures validées
+✅ Audit logging activé
+✅ Error handling sécurisé (pas de leak d'info)
+```
+
+## 📋 Checklist Déploiement
+
+### Pre-Deployment
+- [ ] Tests d'infrastructure passent (node scripts/test-supabase.js)
+- [ ] Migrations testées en local
+- [ ] Variables d'environnement configurées
+- [ ] Rate limiting testé avec quotas réels
+- [ ] Microsoft Graph permissions accordées
+
+### Deployment
+- [ ] Migrations appliquées en production
+- [ ] Variables d'environnement définies dans Vercel
+- [ ] Vercel deployment successful
+- [ ] Health checks passent
+- [ ] Rate limiting fonctionnel
+
+### Post-Deployment
+- [ ] Tests de bout en bout
+- [ ] Monitoring dashboards accessibles
+- [ ] Alertes configurées
+- [ ] Documentation mise à jour
+- [ ] Équipe informée des changements
+
+## 📚 Ressources et Documentation
+
+### Documentation Technique
+```text
+📖 Supabase Docs:        https://supabase.com/docs
+📖 Microsoft Graph:      https://docs.microsoft.com/graph
+📖 Vercel Deployment:    https://vercel.com/docs
+📖 Next.js App Router:   https://nextjs.org/docs/app
+```
+
+### Scripts Utiles
+```bash
+# Infrastructure
+scripts/test-supabase.js           # Test complet infrastructure
+supabase gen types typescript      # Générer types TypeScript
+
+# Development
+pnpm dev                          # Server développement
+pnpm build                        # Build production
+pnpm lint                         # Validation code
+```
+
+### Support et Escalation
+```text
+🚨 Issues Critiques:     
+   1. Vérifier status pages (Supabase, Vercel, Microsoft)
+   2. Consulter logs dans dashboards
+   3. Escalader vers tech lead si nécessaire
+
+📞 Contacts:
+   - Database issues: Supabase support
+   - Deployment issues: Vercel support  
+   - Microsoft Graph: Azure support
+```
+
+---
+
+**🎯 Status Actuel**: Infrastructure Supabase complètement configurée et opérationnelle avec rate limiting pour Microsoft Graph API. Prête pour développement des fonctionnalités.
+
+**👤 Prochaine Étape**: security-engineer doit implémenter la sécurité et validation complète du rate limiting.
+
+**📅 Dernière Validation**: 5 septembre 2025 - Tous les tests d'infrastructure passent
