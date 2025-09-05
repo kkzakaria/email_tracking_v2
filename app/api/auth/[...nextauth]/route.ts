@@ -49,7 +49,7 @@ const microsoftProvider = {
   userinfo: 'https://graph.microsoft.com/v1.0/me',
   clientId: process.env.MICROSOFT_CLIENT_ID,
   clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
-  profile: async (profile: any) => {
+  profile: async (profile: Record<string, unknown>) => {
     try {
       // Validate profile data
       const validator = createValidator(MicrosoftUserInfoSchema);

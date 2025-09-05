@@ -240,7 +240,7 @@ export class MicrosoftGraphClient {
    * Get user's mailbox settings
    * @returns Promise<any> - Mailbox settings
    */
-  async getMailboxSettings(): Promise<any> {
+  async getMailboxSettings(): Promise<Record<string, unknown>> {
     try {
       return await this.callAPI('/me/mailboxSettings', 'GET');
     } catch (error) {
@@ -254,7 +254,7 @@ export class MicrosoftGraphClient {
    * @param options - Query options (top, skip, filter, select, etc.)
    * @returns Promise<any> - Messages collection
    */
-  async getMessages(options?: GraphQueryOptions): Promise<any> {
+  async getMessages(options?: GraphQueryOptions): Promise<Record<string, unknown>> {
     try {
       let endpoint = '/me/messages';
       
@@ -301,7 +301,7 @@ export class MicrosoftGraphClient {
    * @param subscription - Subscription configuration
    * @returns Promise<any> - Created subscription
    */
-  async createSubscription(subscription: WebhookSubscription): Promise<any> {
+  async createSubscription(subscription: WebhookSubscription): Promise<Record<string, unknown>> {
     try {
       return await this.callAPI('/subscriptions', 'POST', subscription);
     } catch (error) {

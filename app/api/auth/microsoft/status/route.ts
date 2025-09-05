@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
     // Get detailed status for each account
     const accountStatuses = await Promise.all(
       accounts.map(async (account) => {
-        const status: any = {
+        const status: Record<string, unknown> = {
           account_id: account.id,
           email_address: account.email_address,
           display_name: account.display_name,
