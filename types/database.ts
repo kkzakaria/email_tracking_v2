@@ -27,6 +27,9 @@ export type NotificationTypeEnum =
   | 'token_expired' 
   | 'rate_limit_exceeded';
 
+// Rate limiting operation types
+export type RateLimitOperationType = 'email_read' | 'webhook_create' | 'bulk_operation';
+
 export interface Database {
   public: {
     Tables: {

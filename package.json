@@ -8,25 +8,32 @@
     "start": "next start",
     "lint": "eslint",
     "test:supabase": "node scripts/test-supabase.js",
+    "validate:env": "node scripts/validate-environment.js",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:status": "supabase status"
   },
   "dependencies": {
+    "@azure/msal-node": "^3.7.3",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
+    "@next-auth/supabase-adapter": "^0.2.1",
     "@radix-ui/react-slot": "^1.2.3",
     "@supabase/supabase-js": "^2.57.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.542.0",
     "next": "15.5.2",
+    "next-auth": "^4.24.11",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "zod": "^4.1.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/microsoft-graph": "^2.40.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
