@@ -12,6 +12,7 @@
 ## 🎯 Objectifs Immédiats (À Faire Maintenant)
 
 ### 🏗️ SYSTEM-ARCHITECT
+
 - ✅ **TERMINÉ:** Valider l'architecture avec les versions actuelles des technologies
   - ✅ Vérifier Next.js 15 API patterns - Compatible
   - ✅ Confirmer Supabase RLS best practices - Compatible
@@ -20,6 +21,7 @@
   - ✅ **Rapport:** Créé `claudedocs/compatibility-validation-report.md`
 
 ### ⚙️ BACKEND-ARCHITECT
+
 - [ ] **PROCHAINE TÂCHE CRITIQUE:** Setup infrastructure Supabase
   - [ ] Créer projet Supabase
   - [ ] Configurer environnement local
@@ -28,6 +30,7 @@
   - [ ] **Documentation:** Mettre à jour `claudedocs/deployment-operations-guide.md`
 
 ### 🔐 SECURITY-ENGINEER
+
 - [ ] **CRITIQUE:** Configuration sécuritaire initiale + Rate Limiting
   - [ ] Implémenter système de chiffrement tokens
   - [ ] Configurer headers de sécurité
@@ -39,6 +42,7 @@
 ### Phase 1: Fondations (Semaines 1-2)
 
 #### Semaine 1
+
 | Agent | Tâche | Statut | Assigné | Terminé | Notes |
 |-------|--------|---------|---------|---------|-------|
 | system-architect | Révision architecture | ✅ TERMINÉ | system-architect | 05/09/2025 | ✅ Compatible avec mises à jour Microsoft Graph |
@@ -47,6 +51,7 @@
 | python-expert | Auth Microsoft OAuth2 | ❌ TODO | - | - | **Mise à jour:** Nouveaux scopes requis |
 
 #### Semaine 2
+
 | Agent | Tâche | Statut | Assigné | Terminé | Notes |
 |-------|--------|---------|---------|---------|-------|
 | backend-architect | Schéma BDD complet | ❌ TODO | - | - | Inclure nouvelles tables rate limiting |
@@ -57,6 +62,7 @@
 ### Phase 2: Fonctionnalités Cœur (Semaines 3-5)
 
 #### Semaine 3
+
 | Agent | Tâche | Statut | Assigné | Terminé | Notes |
 |-------|--------|---------|---------|---------|-------|
 | backend-architect | Pipeline webhooks | ❌ TODO | - | - | Avec rate limiting avancé |
@@ -64,6 +70,7 @@
 | performance-engineer | Optimisation requêtes | ❌ TODO | - | - | |
 
 #### Semaine 4
+
 | Agent | Tâche | Statut | Assigné | Terminé | Notes |
 |-------|--------|---------|---------|---------|-------|
 | python-expert | Moteur relances | ❌ TODO | - | - | |
@@ -71,6 +78,7 @@
 | security-engineer | Audit logging | ❌ TODO | - | - | |
 
 #### Semaine 5
+
 | Agent | Tâche | Statut | Assigné | Terminé | Notes |
 |-------|--------|---------|---------|---------|-------|
 | frontend-architect | Dashboard principal | ❌ TODO | - | - | |
@@ -80,6 +88,7 @@
 ### Phase 3: Fonctionnalités Avancées (Semaines 6-8)
 
 #### Semaine 6
+
 | Agent | Tâche | Statut | Assigné | Terminé | Notes |
 |-------|--------|---------|---------|---------|-------|
 | system-architect | Architecture règles | ❌ TODO | - | - | |
@@ -87,6 +96,7 @@
 | frontend-architect | Interface avancée | ❌ TODO | - | - | |
 
 #### Semaine 7
+
 | Agent | Tâche | Statut | Assigné | Terminé | Notes |
 |-------|--------|---------|---------|---------|-------|
 | backend-architect | Analytics avancé | ❌ TODO | - | - | |
@@ -94,6 +104,7 @@
 | performance-engineer | Optimisation finale | ❌ TODO | - | - | |
 
 #### Semaine 8
+
 | Agent | Tâche | Statut | Assigné | Terminé | Notes |
 |-------|--------|---------|---------|---------|-------|
 | devops-architect | Pipeline déploiement | ❌ TODO | - | - | |
@@ -104,18 +115,21 @@
 ## 🚨 Éléments Critiques à Surveiller
 
 ### ⚠️ NOUVEAUTÉS CRITIQUES (Suite à la révision architecture)
+
 - **Microsoft Graph API:** Nouveaux scopes `MailboxSettings.ReadWrite` requis
 - **Rate Limiting:** Nouvelles limites (10000 email ops/h, 100 bulk ops/min)
 - **Supabase:** Nouvelle table `rate_limit_tracking` à créer
 - **Services:** Nouveau service `lib/rate-limiter.ts` requis
 
 ### Documentation Obligatoire
+
 - ✅ **Architecture validée** - Mise à jour dans `system-architecture.md`
 - ✅ **Rapport de compatibilité** - Créé `compatibility-validation-report.md`
 - [ ] **TOUJOURS consulter** la documentation officielle via Context7 MCP
 - [ ] **TOUJOURS mettre à jour** les fichiers architecture après modifications
 
 ### Points de Contrôle Qualité
+
 - [ ] **Tests automatisés** à chaque phase
 - [ ] **Revue de sécurité** avant chaque mise en production
 - [ ] **Validation performance** à chaque optimisation
@@ -123,6 +137,7 @@
 - [ ] **Tests rate limiting** pour toutes les APIs Microsoft Graph
 
 ### Intégrations Critiques
+
 - ⚠️ **Microsoft Graph API:** **Mise à jour critique requise** - Nouveaux scopes
 - ⚠️ **Rate Limiting:** **Nouveau système requis** - Service + DB table
 - [ ] **Supabase RLS:** Valider toutes les politiques
@@ -132,8 +147,9 @@
 ## 📝 Journal des Décisions Importantes
 
 ### 05/09/2025 - system-architect - Validation architecture terminée
+
 - **Décision:** Architecture globalement compatible avec mises à jour mineures
-- **Changements requis:** 
+- **Changements requis:**
   - Microsoft Graph API: Nouveaux scopes `MailboxSettings.ReadWrite`
   - Rate limiting: Nouvelles limites (10k email ops/h, 100 bulk ops/min)
   - Nouveau service rate limiting requis
@@ -143,6 +159,7 @@
 - **Prochaine étape:** backend-architect doit implémenter les changements Supabase
 
 ### 05/09/2025 - system-architect - Plan de mise à jour défini
+
 - **Phases de correction:**
   1. Phase 1 (1-2 jours): Corrections Microsoft Graph scopes + rate limiting
   2. Phase 2 (3-5 jours): Migration Tailwind v4 + optimisations React Server Components
@@ -152,20 +169,23 @@
 
 ## 🔄 Instructions de Mise à Jour
 
-### Quand mettre à jour ce fichier:
+### Quand mettre à jour ce fichier
+
 1. **Avant de commencer** une nouvelle tâche
 2. **Après avoir terminé** une tâche
 3. **Quand une décision importante** est prise
 4. **Quand un problème critique** est rencontré
 
-### Comment mettre à jour:
+### Comment mettre à jour
+
 1. **Changer le statut** des tâches (❌ TODO → 🔄 EN COURS → ✅ TERMINÉ)
 2. **Ajouter des notes** dans la colonne Notes
 3. **Documenter les décisions** dans le journal
 4. **Mettre à jour la date** de dernière modification
 
-### Template de mise à jour:
-```
+### Template de mise à jour
+
+```text
 - **Tâche:** [Nom de la tâche]
 - **Statut:** ✅ TERMINÉ
 - **Terminé par:** [Nom de l'agent]
@@ -183,18 +203,21 @@
 
 ## 📞 Communication Entre Agents
 
-### Règles de Communication:
+### Règles de Communication
+
 - **Bloquant:** Marquer les tâches qui bloquent d'autres agents
 - **Dépendances:** Indiquer clairement les dépendances dans les notes
 - **Problèmes:** Documenter les problèmes rencontrés pour les autres agents
 - **Solutions:** Partager les solutions trouvées dans le journal
 
-### ⚠️ DÉPENDANCES CRITIQUES IDENTIFIÉES:
+### ⚠️ DÉPENDANCES CRITIQUES IDENTIFIÉES
+
 - **backend-architect** → **security-engineer**: Table rate_limit_tracking doit être créée avant implémentation service
 - **security-engineer** → **python-expert**: Service rate limiting doit être prêt pour intégration OAuth
 - **Tous les agents** → **system-architect**: Validation architecture terminée ✅
 
-### Points de Synchronisation:
+### Points de Synchronisation
+
 - **Fin de chaque semaine:** Bilan et planification suivante
 - **Fin de chaque phase:** Révision complète et validation
 - **Problème critique:** Communication immédiate via le journal
