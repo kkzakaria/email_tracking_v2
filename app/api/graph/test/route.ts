@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
     // Run tests for each account
     const testResults = await Promise.all(
       accounts.map(async (account) => {
-        const testResult: any = {
+        const testResult: Record<string, unknown> = {
           account_id: account.id,
           email_address: account.email_address,
           display_name: account.display_name,
@@ -179,7 +179,7 @@ export async function GET(request: NextRequest) {
           }
 
           // Determine overall success
-          testResult.success = testResult.tests.length > 0 && testResult.tests.every((test: any) => test.success);
+          testResult.success = testResult.tests.length > 0 && testResult.tests.every((test: Record<string, unknown>) => test.success);
 
           // Log the test
           await auditLogger.logEvent({
@@ -191,7 +191,7 @@ export async function GET(request: NextRequest) {
               test_type: testType,
               success: testResult.success,
               test_count: testResult.tests.length,
-              failed_tests: testResult.tests.filter((test: any) => !test.success).map((test: any) => test.name),
+              failed_tests: testResult.tests.filter((test: Record<string, unknown>) => !test.success).map((test: Record<string, unknown>) => test.name),
             },
           });
 

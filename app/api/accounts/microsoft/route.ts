@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
     // Enrich accounts with additional data if requested
     const enrichedAccounts = await Promise.all(
       (accounts || []).map(async (account) => {
-        const enrichedAccount: any = { ...account };
+        const enrichedAccount = { ...account } as Record<string, unknown>;
 
         // Include token information
         if (includeTokens) {
